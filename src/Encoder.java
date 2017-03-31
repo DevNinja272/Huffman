@@ -1,6 +1,9 @@
-import java.nio.file.Paths;
-import java.util.*;
-import java.io.*;
+import javafx.util.Pair;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
 
 public class Encoder
 {
@@ -29,8 +32,14 @@ public class Encoder
         int[] frequencyArray = new int[frequencies.size()];
         for (int i = 0; i < frequencyArray.length; frequencyArray[i] = frequencies.get(i++)) { }
 
-        Huffman.R = frequencyArray.length;
-        Huffman.Node huffmanTree = Huffman.buildTrie(frequencyArray);
-        Huffman.writeTrie(huffmanTree);
+        ArrayList<Pair<Character, String>> mapping = new ArrayList<>(frequencyArray.length);
+
+        HuffmanTree tree = HuffmanCode.buildTree(frequencyArray);
+        HuffmanCode.fillMappingTable(tree, new StringBuffer(), mapping);
+
+        for (Pair<Character, String> pair : mapping)
+        {
+            System.out.println(pair.getKey() + " : " + pair.getValue());
+        }
     }
 }
