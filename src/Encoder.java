@@ -2,7 +2,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,38 +40,51 @@ public class Encoder
             System.out.println(o + " : " + mapping.get(o));
         }
 
-        printRandomCharacters(charCount, "testText", frequencyMap);
+        String filePath             = "testText";
+        String decodedFileExtension = "dec1";
+
+        WriteRandomlyToFile(charCount, filePath, frequencyMap);
+        EncodeFile();
+        DecodeFile();
     }
 
-    public static void printRandomCharacters(int k,
-                                             String filePath,
-                                             Map<Object, Integer> frequencyMap)
+    public static void WriteRandomlyToFile(int count,
+                                           String filePath,
+                                           Map<Object, Integer> frequencyMap)
     {
         RandomSelector randomSelector = new RandomSelector<>(frequencyMap);
         try (FileWriter fileWriter = new FileWriter(filePath))
         {
-            StringBuilder sb = new StringBuilder(k);
-            for (int i = 0; i < k; i++)
+            for (int i = 0; i < count; i++)
             {
-                sb.append(randomSelector.next().toString().toCharArray());
+                fileWriter.write(randomSelector.next().toString().toCharArray());
+            }
+        }
+        catch (IOException ioe)
+        {
+            System.out.println("Exception while writing random text: " + ioe);
+        }
+    }
+
+    public static void EncodeFile(String filePath, Map<Object, String> encoding)
+    {
+        String encodedFileExtension = ".enc1";
+        //@formatter:off
+        try (FileReader fileReader = new FileReader(filePath);
+             FileWriter fileWriter = new FileWriter(filePath + encodedFileExtension))
+        {//@formatter:on
+
+            int min = Integer.MAX_VALUE;
+            int max = 0;
+            for (Object o : encoding.keySet())
+            {
+                if ()
             }
 
-            Map<Object, Integer> counts = new HashMap<>(4);
-            counts.put('a', 0);
-            counts.put('b', 0);
-            counts.put('c', 0);
-            counts.put('d', 0);
-
-            char c;
-            for (int i = 0; i < k; i++)
+            for (int c = fileReader.read(); c > -1; c = fileReader.read())
             {
-                c = sb.charAt(i);
-                counts.put(c, counts.get(c) + 1);
-            }
-
-            for (Object o : counts.keySet())
-            {
-                System.out.println(o + " : " + counts.get(o));
+                if (stringBuilder.)
+                fileWriter.write();
             }
         }
         catch (IOException ioe)
