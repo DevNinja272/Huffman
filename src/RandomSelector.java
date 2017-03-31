@@ -1,7 +1,7 @@
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -9,64 +9,17 @@ import java.util.Random;
  */
 public class RandomSelector<T>
 {
-    private class Frequency
-    {
-        private final T       item;
-        private final Integer frequency;
-
-        public Frequency(T item, Integer frequency)
-        {
-            if (frequency < 0)
-            {
-                throw new IllegalArgumentException("Frequency must have non-negative value.");
-            }
-
-            this.item = item;
-            this.frequency = frequency;
-        }
-
-        public T getItem()
-        { return this.item; }
-
-        public Integer getFrequency()
-        { return this.frequency; }
-
-        @Override
-        public int hashCode()
-        {
-            int result = getItem().hashCode();
-            result = 31 * result + getFrequency().hashCode();
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o)
-            { return true; }
-
-            if (o instanceof RandomSelector.Frequency)
-            {
-                Frequency other = (Frequency) o;
-                return getItem().equals(other.getItem())
-                       && getFrequency().equals(other.getFrequency());
-            }
-
-            return false;
-        }
-    }
-
     private class AccumulationTable
     {
         private final ArrayList<T>       items;
         private final ArrayList<Integer> accumulations;
 
-        AccumulationTable(Collection<Frequency> frequencies)
+        AccumulationTable(Map<T, Integer> frequencyMap)
         {
-            int size = frequencies.size();
+            int size = frequencyMap.size();
             this.items = new ArrayList<>(size);
             this.accumulations = new ArrayList<>(size);
-            updateAccumulationTable(frequencies);
+            updateAccumulationTable(frequencyMap);
         }
 
         private ArrayList<T> getItems()
@@ -85,21 +38,20 @@ public class RandomSelector<T>
             //@formatter:on
         }
 
-        private void updateAccumulationTable(Collection<Frequency> frequencies)
+        private void updateAccumulationTable(Map<T, Integer> frequencyMap)
         {
             List<T>       items         = this.getItems();
             List<Integer> accumulations = this.getAccumulations();
 
             int accumulation = this.getTotal();
-            for (Frequency frequency : frequencies)
+            for (T item : frequencyMap.keySet())
             {
-                T   item           = frequency.getItem();
-                int frequencyValue = frequency.getFrequency();
+                int frequency = frequencyMap.get(item);
 
-                if (frequency.getFrequency() == 0)
+                if (frequency == 0)
                 { continue; }
 
-                accumulation += frequencyValue;
+                accumulation += frequency;
 
                 items.add(item);
                 accumulations.add(accumulation);
@@ -112,31 +64,40 @@ public class RandomSelector<T>
         T get(int index)
         { return this.getItems().get(index); }
 
-        long getAccumulation(int index)
+        int getAccumulation(int index)
         { return this.getAccumulations().get(index); }
 
-        long getAccumulation(T item)
+        int getAccumulation(T item)
         {
             int index = this.getItems().indexOf(item);
             return this.getAccumulations().get(index);
         }
 
-        public T getItemWithLowestAccumulationAtLeast(long accumulation)
+        public T getItemWithLowestAccumulationAtLeast(int accumulation)
         {
-            ArrayList<Integer> accumulations = this.getAccumulations();
+            List<Integer> accumulations = this.getAccumulations();
 
-            int  i = 0;
-            long leftBound, rightBound;
-
-            rightBound = accumulations.get(i);
-            for (i += 1; i < accumulations.size(); i++)
+            if (accumulation < 0)
             {
-                leftBound = rightBound;
-                rightBound = accumulations.get(i);
+                throw new IllegalArgumentException("Accumulation must be non-negative.");
+            }
+            else if (accumulations == null || accumulations.isEmpty())
+            {
+                return null;
+            }
+            else if (accumulation == 0)
+            {
+                return get(0);
+            }
 
-                if (leftBound < accumulation && rightBound > accumulation)
+            long upperBound = 0;
+            for (int i = 0; i < accumulations.size(); i++)
+            {
+                upperBound = accumulations.get(i);
+                if (accumulation <= upperBound)
                 {
-                    return this.getItems().get(i);
+                    T item = this.get(i);
+                    return item;
                 }
             }
 
@@ -147,22 +108,9 @@ public class RandomSelector<T>
     private final AccumulationTable accumulationTable;
     private final Random            random;
 
-    public RandomSelector(List<T> items, List<Integer> frequencies)
+    public RandomSelector(Map<T, Integer> frequencyMap)
     {
-        int size = items.size();
-
-        if (size != frequencies.size())
-        {
-            throw new IllegalArgumentException("Number of items must equal number of frequencies.");
-        }
-
-        Collection<Frequency> frequencyList = new ArrayList<>(size);
-        for (int i = 0; i < size; i++)
-        {
-            frequencyList.add(new Frequency(items.get(i), frequencies.get(i)));
-        }
-
-        this.accumulationTable = new AccumulationTable(frequencyList);
+        this.accumulationTable = new AccumulationTable(frequencyMap);
         this.random = generateFreshRandom();
     }
 
@@ -184,13 +132,15 @@ public class RandomSelector<T>
             seed |= secureRandomBytes[i] << (i * 8);
         }
 
-        return new Random(seed);
+        return new Random(seed | System.nanoTime());
     }
 
     public T next()
     {
         AccumulationTable accumulationTable = this.getAccumulationTable();
-        int accumulation = this.getRandom().nextInt(accumulationTable.getTotal() - 1) + 1;
+        int               bound             = accumulationTable.getTotal();
+        int               accumulation      = this.getRandom().nextInt(Math.max(bound, 0)) + 1;
+
         return accumulationTable.getItemWithLowestAccumulationAtLeast(accumulation);
     }
 }
