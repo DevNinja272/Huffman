@@ -45,7 +45,7 @@ public class Encoder
 
         WriteRandomlyToFile(charCount, randomTextFilePath, frequencyMap);
         EncodeFile(randomTextFilePath, mapping);
-        // DecodeFile();
+        DecodeFile(randomTextFilePath, mapping);
     }
 
     public static void WriteRandomlyToFile(int count,
@@ -82,6 +82,41 @@ public class Encoder
                     fileWriter.write(encoded.toCharArray());
                 }
                 System.out.println(c + " encoded to " + encoded);
+            }
+        }
+        catch (IOException ioe)
+        {
+            System.out.println("Exception while writing random text: " + ioe);
+        }
+    }
+
+    public static void DecodeFile(String filePath, Map<Object, String> decoding)
+    {
+        String decodedFileExtension = ".dec1";
+        String encodedFileExtension = ".enc1";
+        //@formatter:off
+        try (FileReader fileReader = new FileReader(filePath + encodedFileExtension);
+             FileWriter fileWriter = new FileWriter(filePath + decodedFileExtension))
+        {//@formatter:on
+
+            String buffer = "";
+
+            for (int c = fileReader.read(); c > -1; c = fileReader.read())
+            {
+                buffer += c;
+
+                String decoded;
+                for(Entry<String,String> mapPair : decoding.entrySet()) {
+                    Object key = mapPair.getKey();
+                    String value = mapPair.getValue();
+                    if (buffer == value)
+                    {
+                        decoded = key;
+                        fileWriter.write(key);
+                    }
+                }
+
+                System.out.println(buffer + " decoded to " + decoded);
             }
         }
         catch (IOException ioe)
