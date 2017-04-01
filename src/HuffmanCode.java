@@ -34,11 +34,11 @@ abstract class HuffmanTree implements Comparable<HuffmanTree>
     }
 }
 
-class HuffmanLeaf<T> extends HuffmanTree
+class HuffmanLeaf extends HuffmanTree
 {
-    public final T value;
+    public final String value;
 
-    public HuffmanLeaf(int freq, T val)
+    public HuffmanLeaf(int freq, String val)
     {
         super(freq);
         value = val;
@@ -51,7 +51,7 @@ class HuffmanLeaf<T> extends HuffmanTree
         if (!(o instanceof HuffmanLeaf)) { return false; }
         if (!super.equals(o)) { return false; }
 
-        HuffmanLeaf<?> that = (HuffmanLeaf<?>) o;
+        HuffmanLeaf that = (HuffmanLeaf) o;
 
         return value.equals(that.value);
     }
@@ -102,23 +102,23 @@ class HuffmanNode extends HuffmanTree
 public class HuffmanCode
 {
     // input is an array of frequencies, indexed by character code
-    public static HuffmanTree buildTree(Map<Object, Integer> frequencyMap)
+    public static HuffmanTree buildTree(Map<String, Integer> frequencyMap)
             throws IllegalArgumentException
     {
         PriorityQueue<HuffmanTree> trees = new PriorityQueue<>();
 
         // initially, we have a forest of leaves
         // one for each non-empty character
-        for (Object item : frequencyMap.keySet())
+        for (Map.Entry<String, Integer> entry : frequencyMap.entrySet())
         {
-            int freq = frequencyMap.get(item);
+            int freq = entry.getValue();
             if (freq < 0)
             {
                 throw new IllegalArgumentException("Frequency must be non-negative.");
             }
             else if (freq > 0)
             {
-                trees.offer(new HuffmanLeaf<>(freq, item));
+                trees.offer(new HuffmanLeaf(freq, entry.getKey()));
             }
         }
 
@@ -138,8 +138,7 @@ public class HuffmanCode
 
     public static void fillMappingTable(HuffmanTree tree,
                                         StringBuffer prefix,
-                                        Map<Object, String> mapping) throws
-                                                                      IllegalArgumentException
+                                        Map<String, String> mapping) throws IllegalArgumentException
     {
         if (tree == null)
         {

@@ -44,16 +44,16 @@ public class RandomSelector<T>
             List<Integer> accumulations = this.getAccumulations();
 
             int accumulation = this.getTotal();
-            for (T item : frequencyMap.keySet())
+            for (Map.Entry<T, Integer> entry : frequencyMap.entrySet())
             {
-                int frequency = frequencyMap.get(item);
+                int frequency = entry.getValue();
 
                 if (frequency == 0)
                 { continue; }
 
                 accumulation += frequency;
 
-                items.add(item);
+                items.add(entry.getKey());
                 accumulations.add(accumulation);
             }
 
