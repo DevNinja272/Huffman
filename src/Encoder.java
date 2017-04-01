@@ -5,12 +5,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.lang.Math;
+import java.util.*;
 
 public class Encoder
 {
     private static String randomTextFilePath   = "testText";
     private static String decodedFileExtension = ".dec1";
     private static String encodedFileExtension = ".enc1";
+    private static String decodedTwoFileExtension = ".dec2";
+    private static String encodedTwoFileExtension = ".enc2";
 
     public static void main(String args[])
     {
@@ -33,11 +37,15 @@ public class Encoder
         Map<String, String> mapping = new HashMap<>(frequencyMap.size());
         HuffmanCode.fillMappingTable(tree, new StringBuffer(), mapping);
         WriteRandomlyToFile(charCount, randomTextFilePath, frequencyMap);
-        EncodeFile(randomTextFilePath, mapping);
+        EncodeFile(randomTextFilePath, mapping, encodedFileExtension);
+
+        PrintActualEntropy(frequencyMap);
 
         Map<String, String> reverseMapping = new HashMap<>(mapping.size());
         PrintEncodingAndGenerateReverseMapping(mapping, reverseMapping);
-        DecodeFile(randomTextFilePath, reverseMapping);
+        DecodeFile(randomTextFilePath, reverseMapping, encodedFileExtension, decodedFileExtension);
+
+        PrintOneSymbolEncodingEntropy(mapping, frequencyMap);
 
         /* Generate expanded version of encoding */
         Map<String, Integer> expandedFrequencyMap = ExpandEncodingForDeriveAlphabet(j,
@@ -49,6 +57,68 @@ public class Encoder
 
         Map<String, String> expandedReverseMapping = new HashMap<>(expandedMapping.size());
         PrintEncodingAndGenerateReverseMapping(expandedMapping, expandedReverseMapping);
+        EncodeFile(randomTextFilePath, expandedMapping, encodedTwoFileExtension);
+        DecodeFile(randomTextFilePath, expandedReverseMapping, encodedTwoFileExtension, decodedTwoFileExtension);
+        PrintTwoSymbolEncodingEntropy(expandedMapping, expandedFrequencyMap);
+    }
+
+    public static void PrintActualEntropy(Map<String, Integer> frequencyMap)
+    {
+        float sum = 0;
+        for(Integer value : frequencyMap.values())
+        {
+            sum += value;
+        }
+
+        float entropy = 0;
+        for(Integer value : frequencyMap.values())
+        {
+            entropy += ((value/sum) * (Math.log(value/sum)/Math.log(2))); 
+        }
+        entropy = -entropy;
+        System.out.println("Actual Entropy: " + entropy);
+    }
+
+    public static void PrintOneSymbolEncodingEntropy(Map<String, String> mapping, Map<String, Integer> frequencyMap)
+    {
+        float originalSum = 0;
+        ArrayList<Integer> frequencyArray = new ArrayList<Integer>();
+        for(Integer value : frequencyMap.values())
+        {
+            frequencyArray.add(value);
+            originalSum += value;
+        }
+
+        float encodingSum = 0;
+        int index = 0;
+        for(String code : mapping.values())
+        {
+            encodingSum += code.length() + frequencyArray.get(index);
+            index++;
+        }
+
+        System.out.println("1-Symbol Encoding Efficiency compared to Original: " + encodingSum/originalSum);
+    }
+
+    public static void PrintTwoSymbolEncodingEntropy(Map<String, String> expandedMapping, Map<String, Integer> expandedFrequencyMap)
+    {
+        float originalSum = 0;
+        ArrayList<Integer> frequencyArray = new ArrayList<Integer>();
+        for(Integer value : expandedFrequencyMap.values())
+        {
+            frequencyArray.add(value);
+            originalSum += value;
+        }
+
+        float encodingSum = 0;
+        int index = 0;
+        for(String code : expandedMapping.values())
+        {
+            encodingSum += code.length() + frequencyArray.get(index);
+            index++;
+        }
+
+        System.out.println("2-Symbol Encoding Efficiency compared to 1-Symbol Efficiency: " + encodingSum/originalSum);
     }
 
     public static void WriteRandomlyToFile(int count,
@@ -100,12 +170,12 @@ public class Encoder
         }
     }
 
-    public static void EncodeFile(String filePath, Map<String, String> encoding)
+    public static void EncodeFile(String filePath, Map<String, String> encoding, String extension)
     {
         //@formatter:off
         try (
                 FileReader fileReader = new FileReader(filePath);
-                FileWriter fileWriter = new FileWriter(filePath + encodedFileExtension);
+                FileWriter fileWriter = new FileWriter(filePath + extension);
             )
         {//@formatter:on
             for (int c = fileReader.read(); c > -1; c = fileReader.read())
@@ -123,12 +193,12 @@ public class Encoder
         }
     }
 
-    public static void DecodeFile(String filePath, Map<String, String> decoding)
+    public static void DecodeFile(String filePath, Map<String, String> decoding, String encodeExtension, String decodeExtension)
     {
         //@formatter:off
         try (
-                FileReader fileReader = new FileReader(filePath + encodedFileExtension);
-                FileWriter fileWriter = new FileWriter(filePath + decodedFileExtension);
+                FileReader fileReader = new FileReader(filePath + encodeExtension);
+                FileWriter fileWriter = new FileWriter(filePath + decodeExtension);
             )
         {//@formatter:on
             // Get max length to impose practical limit
